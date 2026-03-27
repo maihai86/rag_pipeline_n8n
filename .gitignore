@@ -1,0 +1,39 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node / npm (if used)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Docker volumes (if bind-mounted)
+n8n_data/
+postgres_data/
+qdrant_data/
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# n8n
+.n8n/
+.n8n_user_data/
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+.tmp/
+temp/
+*.tmp

@@ -1,0 +1,162 @@
+{
+  "name": "Chat Main",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "d1b2c3d4-4444-4000-8000-000000000001",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 400],
+      "webhookId": "chat-trigger-webhook"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a helpful assistant with access to a knowledge base and web search.\n- Use the vector store tool to search internal documents when the user asks about specific topics.\n- Use the web search tool when the user asks about recent events, real-time information, or topics not in the knowledge base.\n- If you don't know the answer and no tool helps, say \"I don't know.\"\n- Always cite your sources."
+        }
+      },
+      "id": "d1b2c3d4-4444-4000-8000-000000000002",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [520, 400]
+    },
+    {
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "options": {
+          "maxTokensToSample": 4096,
+          "temperature": 0.3
+        }
+      },
+      "id": "d1b2c3d4-4444-4000-8000-000000000003",
+      "name": "Anthropic Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.2,
+      "position": [380, 620],
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "-- CONFIGURE IN n8n UI --"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "sample_docs",
+          "mode": "name"
+        },
+        "topK": 5,
+        "options": {}
+      },
+      "id": "d1b2c3d4-4444-4000-8000-000000000004",
+      "name": "Qdrant Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1,
+      "position": [600, 620],
+      "credentials": {
+        "qdrantApi": {
+          "id": "",
+          "name": "-- CONFIGURE IN n8n UI --"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "id": "d1b2c3d4-4444-4000-8000-000000000005",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [600, 800],
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "-- CONFIGURE IN n8n UI --"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sessionId ?? 'default' }}",
+        "contextWindowLength": 10
+      },
+      "id": "d1b2c3d4-4444-4000-8000-000000000006",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.2,
+      "position": [820, 620]
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "staticData": null
+}

@@ -1,0 +1,748 @@
+{
+  "id": "rag-chatbot-v2",
+  "name": "RAG Chatbot v2",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1e51b497-7dba-4fc1-b03c-fc3fe1c73bbd",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -384
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-1",
+              "name": "error",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "assign-2",
+              "name": "message",
+              "value": "Something went wrong. Please try again.",
+              "type": "string"
+            },
+            {
+              "id": "assign-3",
+              "name": "workflow",
+              "value": "={{ $json.workflow.name }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-4",
+              "name": "error_message",
+              "value": "={{ $json.execution.error.message }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-5",
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "485e4777-503e-497d-8f84-85f4fee3c57d",
+      "name": "Set Error Details",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -256,
+        -384
+      ]
+    },
+    {
+      "parameters": {
+        "path": "health",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "3195b3fe-98a2-4c42-b913-148bbdfc3f5e",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        -144
+      ],
+      "webhookId": "health-check-webhook"
+    },
+    {
+      "parameters": {
+        "url": "http://qdrant:6333/collections",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "31e4c440-adda-456f-9e2c-30d929c28c7d",
+      "name": "Check Qdrant",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -448,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-1",
+              "name": "status",
+              "value": "ok",
+              "type": "string"
+            },
+            {
+              "id": "assign-2",
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-3",
+              "name": "services.n8n",
+              "value": "healthy",
+              "type": "string"
+            },
+            {
+              "id": "assign-4",
+              "name": "services.qdrant",
+              "value": "healthy",
+              "type": "string"
+            },
+            {
+              "id": "assign-5",
+              "name": "services.qdrant_collections",
+              "value": "={{ $json.result?.collections?.length ?? 0 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ec5008d2-8dac-4548-afb6-6485bd7539ee",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -208,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {}
+      },
+      "id": "ce9f2eed-16c2-4e3c-82ae-0591d8a40313",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        -144
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "8ca10302-9ae4-40af-be74-a53008da0c61",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ingest",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "ingest-webhook-001",
+      "name": "Ingest Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -752,
+        80
+      ],
+      "webhookId": "ingest-webhook"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/sample_docs/*",
+        "options": {}
+      },
+      "id": "8d0d0bab-617d-4774-8bd5-0e2d87de1c76",
+      "name": "Read Files from Disk",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "sample_docs",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "e733323e-6a63-4e1b-8350-94167432b339",
+      "name": "Qdrant Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        176
+      ],
+      "credentials": {
+        "qdrantApi": {
+          "id": "2xW9hIuUKovxxZUC",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {}
+      },
+      "id": "3528f6c1-6e94-4a9d-bf23-f959721b4f2c",
+      "name": "Default Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 200,
+        "options": {}
+      },
+      "id": "2b2ce18a-3f6a-4a7e-a5c4-1cce61f1131d",
+      "name": "Recursive Character Text Splitter",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "id": "585c6b1e-20cf-4461-a6d7-9dae62bb44c4",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        112,
+        384
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "K12FyN3qtJARjB60",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "Chat Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        784
+      ],
+      "webhookId": "chat-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "map-1",
+              "name": "chatInput",
+              "value": "={{ $json.body?.message ?? $json.message ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "map-2",
+              "name": "sessionId",
+              "value": "={{ $json.body?.sessionId ?? $json.sessionId ?? 'default' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "name": "Map Chat Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -448,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a knowledgeable AI assistant for a technical project. You have access to two tools:\n\n## Tools\n1. **knowledge_base** — Internal document collection covering: RAG pipelines, n8n workflows, Qdrant vector database, MCP protocol, Docker best practices, LLM comparisons, and project setup.\n2. **web_search** — Tavily Search for real-time web information (returns AI-optimized results with direct answers).\n\n## Tool Selection Rules\n- For questions about RAG, n8n, Qdrant, MCP, Docker, LLMs, or project setup → use **knowledge_base** FIRST.\n- For current events, recent news, real-time data, or topics NOT in the knowledge base → use **web_search**.\n- If the knowledge_base result is insufficient or irrelevant → try **web_search** as fallback.\n- For general conversation or simple greetings → respond directly without tools.\n\n## IMPORTANT: Always Try Tools First\n- You MUST use a tool before saying you don't know. Never respond with \"I don't know\" without first searching.\n- For ANY factual question, search the knowledge_base first.\n\n## Response Guidelines\n- Be concise and direct.\n- Always cite sources: document name for knowledge_base results, URL for web results.\n- If neither tool provides a good answer after searching, say: \"I don't have enough information to answer that accurately.\"\n- Never fabricate information. If unsure, say so."
+        }
+      },
+      "id": "4de2ac4f-d184-4799-983f-f6093f5918f3",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -224,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "resp-1",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "resp-2",
+              "name": "sessionId",
+              "value": "={{ $('Map Chat Input').item.json.sessionId ?? 'default' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d4e5f6a7-b8c9-0123-defa-234567890123",
+      "name": "Format Chat Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {}
+      },
+      "id": "e5f6a7b8-c9d0-1234-efab-345678901234",
+      "name": "Respond to Chat Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "maxTokens": 4096,
+          "temperature": 0.3
+        }
+      },
+      "id": "195e4088-ec2d-4f05-b61c-73856e91483d",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        1008
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "K12FyN3qtJARjB60",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sessionId ?? 'default' }}",
+        "contextWindowLength": 10
+      },
+      "id": "a818def1-8573-48f2-a5cd-11333639e312",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "name": "knowledge_base",
+        "description": "Search the internal knowledge base for information about RAG pipelines, n8n workflows, Qdrant vector database, MCP protocol, Docker best practices, LLM comparison, and project setup. Use this tool when the user asks about any of these topics.",
+        "topK": 5
+      },
+      "id": "2fb247fb-910b-4acb-9a7e-dbdced99d981",
+      "name": "Vector Store Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "sample_docs",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "f1a2b3c4-d5e6-7890-abcd-111222333444",
+      "name": "Qdrant Retriever",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        1184
+      ],
+      "credentials": {
+        "qdrantApi": {
+          "id": "2xW9hIuUKovxxZUC",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "id": "e224ee91-63c6-4cc9-86fb-332f0cd0ed7a",
+      "name": "Embeddings OpenAI1",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        1360
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "K12FyN3qtJARjB60",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "a1a2a3a4-b5b6-7c7d-8e8f-999888777666",
+      "name": "Tool LLM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        1184
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "K12FyN3qtJARjB60",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "web_search",
+        "description": "Search the web using Tavily for real-time information, recent events, current news, or topics not covered by the internal knowledge base. The input should be a concise search query string. Returns AI-optimized results with direct answers and source URLs.",
+        "jsCode": "const apiKey = $env.TAVILY_API_KEY;\nif (!apiKey) return 'Web search unavailable: TAVILY_API_KEY not configured.';\ntry {\n  const response = await fetch('https://api.tavily.com/search', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({\n      api_key: apiKey,\n      query: query,\n      search_depth: 'basic',\n      max_results: 5,\n      include_answer: true\n    })\n  });\n  const data = await response.json();\n  if (data.answer) {\n    const sources = (data.results || []).map(r => '- ' + r.title + ': ' + r.url).join('\\n');\n    return data.answer + '\\n\\nSources:\\n' + sources;\n  }\n  if (data.results && data.results.length > 0) {\n    return data.results.map(r => r.title + '\\n' + r.content + '\\nURL: ' + r.url).join('\\n\\n');\n  }\n  return 'No results found for: ' + query;\n} catch (e) {\n  return 'Web search error: ' + e.message;\n}"
+      },
+      "id": "c3d4e5f6-a7b8-9012-cdef-567890abcdef",
+      "name": "Tavily Web Search",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        160,
+        1008
+      ]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Error Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Check Qdrant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Qdrant": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Read Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ingest Webhook": {
+      "main": [
+        [
+          {
+            "node": "Read Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "main": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Map Chat Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Chat Input": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Chat Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Chat Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Store Tool": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Retriever": {
+      "main": [
+        [
+          {
+            "node": "Vector Store Tool",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Retriever",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool LLM": {
+      "main": [
+        [
+          {
+            "node": "Vector Store Tool",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily Web Search": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "staticData": null
+}
